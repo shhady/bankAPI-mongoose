@@ -185,18 +185,53 @@ app.delete("/users/:id", async (req, res) => {
   }
 });
 
-app.put("/update", async (req, res) => {
-  const updatedCash = req.body.updatedCash;
-  const id = req.params.id;
-  console.log(id);
+const deposit = async (body) => {
+  const amount = body.amount;
+
+  const id = body.toID;
+  const user = await User.findById(id);
+  if (!user) {
+    throw new Error("User not found!");
+  }
+  user.cash += Number(body.amount);
+  return await user.save();
+};
+
+const withdraw = async (body) => {
+  const amount = body.amount;
+
+  const id = body.fromID;
+  const user = await User.findById(id);
+  if (!user) {
+    throw new Error("User not found!");
+  }
+  user.cash -= Number(body.amount);
+  return await user.save();
+};
+
+app.put("/deposit", async (req, res) => {
   try {
-    await User.findById(id, (newCash) => {
-      newCash.cash = updatedCash;
-      newCash.save();
-      res.send("update");
-    });
+    const depositUser = await deposit(req.body);
+    res.json({ depositUser });
   } catch (e) {
-    console.log(e);
+    res.status(404).json({ message: e.message });
+  }
+});
+app.put("/withdraw", async (req, res) => {
+  try {
+    const withdrawUser = await withdraw(req.body);
+    res.json({ withdrawUser });
+  } catch (e) {
+    res.status(404).json({ message: e.message });
+  }
+});
+app.put("/transfer", async (req, res) => {
+  try {
+    const depositUser = await deposit(req.body);
+    const withdrawUser = await withdraw(req.body);
+    res.json({ fromUser: withdrawUser, toUser: depositUser });
+  } catch (e) {
+    res.status(404).json({ message: e.message });
   }
 });
 

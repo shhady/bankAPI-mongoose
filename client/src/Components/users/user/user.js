@@ -3,41 +3,40 @@ import { useState, useEffect } from "react";
 import axios from "axios";
 export default function User() {
   const [allUsers, setAllUsers] = useState(null);
-  const [showDepositInput, setShowDepositInput] = useState(false);
+  const [showDepositInput, setShowDepositInput] = useState(null);
   const [showWithdrawInput, setShowWithdrawInput] = useState(false);
   const [showTransferInput, setshowTransferInput] = useState(false);
-  const [updatedCash, setUpdatedCash] = useState(null);
+  const [updatedCash, setUpdatedCash] = useState(0);
   useEffect(() => {
     const search = async () => {
       const response = await axios.get("http://localhost:8000/users");
       setAllUsers(response.data);
+      console.log(response.data);
     };
     search();
   }, []);
   console.log(allUsers);
 
-  //   useEffect(() => {
-  //     const search = async () => {
-  //       const response = await axios.delete("http://localhost:8000/users");
-  //       setAllUsers(response.data);
-  //     };
-  //     search();
-  //   }, []);
-  //   console.log(allUsers);
-
   if (!allUsers) return null;
 
-  const handleClickDeposit = () => {
-    setShowDepositInput(!showDepositInput);
+  const handleClickDeposit = (id) => {
+    setShowDepositInput(id);
   };
 
   const handleSubmitDeposit = (id) => {
-    setShowDepositInput(!showDepositInput);
-    axios.put(`http://localhost:8000/update/${id}`, {
-      id: id,
-      updatedCash: updatedCash,
+    axios.put(`http://localhost:8000/deposit`, {
+      toID: id,
+      amount: updatedCash,
     });
-    console.log(updatedCash);
+    const users = [...allUsers];
+    const userFound = users.find((user) => {
+      return user._id === id;
+    });
+    userFound.cash += Number(updatedCash);
+    setAllUsers(users);
+    setShowDepositInput(null);
+    setUpdatedCash(0);
+    console.log("here");
   };
   const handleClickWithdraw = () => {
     setShowWithdrawInput(!showWithdrawInput);
@@ -69,18 +68,26 @@ export default function User() {
           <div>{user.credit}</div>
 
           <div>
-            <button onClick={handleClickDeposit}>Deposit</button>
+            <button onClick={() => handleClickDeposit(user._id)}>
+              Deposit
+            </button>
             <div>
-              {showDepositInput && (
+              {user._id === showDepositInput && (
                 <>
                   <input
+                    value={updatedCash}
                     type="number"
                     placeholder="amount"
                     onChange={(e) => {
                       setUpdatedCash(e.target.value);
                     }}
                   ></input>
-                  <button onClick={() => handleSubmitDeposit(user._id)}>
+                  <button
+                    onClick={() => {
+                      handleSubmitDeposit(user._id);
+                      setShowDepositInput(null);
+                    }}
+                  >
                     Submit
                   </button>
                 </>
